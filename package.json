@@ -4,7 +4,7 @@
   "description": "To do project based on the Assignment from Alt school Backend(Node.js)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js"
   },
   "author": "Bankole Oladimeji Solomon",
   "license": "ISC",
