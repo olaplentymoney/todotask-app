@@ -17,7 +17,7 @@ connectToMongoDB();
 //const userDBpath = path.join(__dirname, 'DB', 'user.json');
 const pathName = path.join(__dirname, 'DB_Model', 'task.json');
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 const HOST_NAME = 'localHost';
 
 const todoTaskObj = fs.readFileSync(pathName, 'utf-8');
