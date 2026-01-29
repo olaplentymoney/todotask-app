@@ -205,13 +205,14 @@ function deleteTodoTask(req, res) {
 ////SERVER
 const server = http.createServer(requestHandler);
 
-server.listen(PORT, HOST_NAME, () => {
+server.listen(PORT, () => {
   console.log(`Server started on http://${HOST_NAME}:${PORT}`);
 });
 
 process.on('SIGINT', async () => {
   useLogger('INFO')('Application shutting down');
   await mongoose.connection.close(); // close database connection
+  server.close();
 });
 
 process.on('unhandledRejection', async (err) => {
