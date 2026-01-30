@@ -7,6 +7,8 @@ const {
   authenticate,
   useLogger,
   LogLevel,
+  login,
+  signup,
 } = require('./authentication/passwordBasedAuth');
 const { connectToMongoDB } = require('./db.js');
 const { Tasks } = require('./DB_Model/task.js');
@@ -15,90 +17,70 @@ const { default: mongoose } = require('mongoose');
 //Establishes connection to Database
 connectToMongoDB();
 //const userDBpath = path.join(__dirname, 'DB', 'user.json');
-const pathName = path.join(__dirname, 'DB_Model', 'task.json');
 
 const PORT = process.env.PORT || 3000;
 const HOST_NAME = 'localHost';
-
-const todoTaskObj = fs.readFileSync(pathName, 'utf-8');
-
-const parsedTodoObj = JSON.parse(todoTaskObj);
-
-const saveTodo = ({ pathname, data, cb }) => {
-  fs.writeFile(pathname, data, (err) => {
-    if (err) {
-      return cb(err);
-    }
-    cb(null, data);
-  });
-};
 
 const requestHandler = async (req, res) => {
   const { pathname } = url.parse(req.url, true);
   res.setHeader('Content-Type', 'Application/json');
 
-  //READ TO-DO TASK
-  if (pathname === '/to-do-task' && req.method === 'GET') {
-    authenticate(req, res)
-      .then(() => {
-        getAllTodoTasks(req, res);
-      })
-      .catch((err) => {
-        const log = useLogger('ERROR');
-        log(err);
-        res.writeHead(500);
-        res.end(JSON.stringify({ message: err }));
-      });
-  }
+  // higher order function
+  const protect = (handler) => {
+    return (req, res) => {
+      return authenticate(req, res)
+        .then((context) => {
+          req.user = context;
+          return handler(req, res);
+        })
+        .catch((err) => {
+          const log = useLogger('ERROR');
+          log(err);
+          res.writeHead(err.status || 401);
+          res.end(err.message || 'Unauthorized');
+        });
+    };
+  };
 
-  //INSERT/CREATE TO-DO TASK
-  else if (pathname === '/to-do-task' && req.method === 'POST') {
-    authenticate(req, res)
-      .then(() => {
-        addTodoTask(req, res);
-      })
-      .catch((err) => {
-        useLogger(LogLevel.ERROR)(err);
-        res.writeHead(500);
-        res.end(JSON.stringify({ message: err }));
-      });
-  }
+  const routes = {
+    GET: {
+      '/todo': protect(getAllTodoTasks),
+    },
+    POST: {
+      '/todo': protect(addTodoTask),
+      '/auth/login': login,
+      '/auth/signup': signup,
+    },
+    DELETE: {
+      '/todo': protect(deleteTodoTask),
+    },
+    PUT: {
+      '/todo': protect(updateTodoTask),
+    },
+  };
 
-  //UPDATE TO-DO TASK
-  else if (pathname === '/to-do-task' && req.method === 'PUT') {
-    authenticate(req, res)
-      .then(() => {
-        updateTodoTask(req, res);
-      })
-      .catch((err) => {
-        res.writeHead(500);
-        res.end(JSON.stringify({ message: err }));
-      });
-  }
-
-  //DELETE TO-DO TASK
-  else if (pathname === '/to-do-task' && req.method === 'DELETE') {
-    authenticate(req, res)
-      .then(() => {
-        deleteTodoTask(req, res);
-      })
-      .catch((err) => {
-        res.writeHead(500);
-        res.end(JSON.stringify({ message: err }));
-      });
-  } else {
+  const handler = routes?.[req.method]?.[pathname];
+  if (!handler) {
     res.writeHead(404);
-    res.end('Not matching route in this API');
+    return res.end('No matching route in this API');
   }
+
+  handler(req, res);
 };
 
 //GET METHOD
-async function getAllTodoTasks(req, res) {
+function getAllTodoTasks(req, res) {
   const user = req.user;
-  const todo = await Tasks.find({ userId: user.id });
-  // const userTask = parsedTodoObj.filter((task) => task.userId === user.id);
-  res.writeHead(200);
-  res.end(JSON.stringify(todo));
+  Tasks.find({ userId: user.id })
+    .then((todos) => {
+      res.writeHead(200);
+      res.end(JSON.stringify(todos));
+    })
+    .catch((err) => {
+      useLogger(LogLevel.ERROR)(err);
+      res.writeHead(400);
+      res.end('Something went wrong!!!');
+    });
 }
 
 //POST METHOD

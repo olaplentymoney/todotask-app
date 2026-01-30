@@ -14,19 +14,144 @@ function getAllUsers() {
   });
 }
 
-// async function getAllUsers() {
-//   return fs.readFile(userDBpath, 'utf-8', (err, users) => {
-//     if (err) {
-//       return err;
-//     }
+const getUserByUserName = (params = { username, password }) => {
+  return Users.findOne({ ...params })
+    .select('-tasks -password') // remove password from projection
+    .then((user) => {
+      // return user if found
+      return user;
+    });
+};
 
-//     return JSON.parse(users);
-//   });
-// }
+function login(req, res) {
+  // take body
+  const body = [];
+  req.on('data', (chunk) => {
+    body.push(chunk);
+  });
+  // parse body
+  req.on('end', () => {
+    const data = Buffer.concat(body).toString();
+    const { username, password } = JSON.parse(data);
 
-// try {
-//   await getAllUsers();
-// } catch (error) {}
+    if (
+      !username ||
+      !password ||
+      (!typeof username === 'string' && typeof password === 'string') ||
+      !password.trim().length ||
+      !username.trim().length
+    ) {
+      res.writeHead(400);
+      return res.end('Invalid username or password');
+    }
+
+    // find user
+    getUserByUserName({ username, password })
+      .then((user) => {
+        if (!user) {
+          res.writeHead(404);
+          return res.end('Invalid username or password');
+        }
+        res.writeHead(200);
+        res.end(JSON.stringify(user));
+      })
+      .catch((err) => {
+        useLogger(LogLevel.ERROR)(err);
+        res.writeHead(500);
+        res.end('Something went wrong!!!');
+      });
+
+    // Users.findOne({ username, password })
+    //   .select('-tasks -password') // remove password from projection
+    //   .then((user) => {
+    //     // return error if not found
+    //     if (!user) {
+    //       res.writeHead(404);
+    //       return res.end('User not found!!');
+    //     }
+
+    //     // return user if found
+    //     res.writeHead(200);
+    //     res.end(JSON.stringify({ user }));
+    //   })
+  });
+}
+
+function signup(req, res) {
+  // parse body
+  const body = [];
+  req.on('data', (chunk) => {
+    body.push(chunk);
+  });
+
+  req.on('end', () => {
+    const buffer = Buffer.concat(body).toString();
+
+    const { username, password, email } = JSON.parse(buffer);
+
+    if (
+      !username ||
+      !password ||
+      !email ||
+      !username.trim().length ||
+      !password.trim().length ||
+      !email.trim().length
+    ) {
+      res.writeHead(400);
+      return res.end('Invalid username or password');
+    }
+
+    getUserByUserName({ username })
+      .then((user) => {
+        if (user) {
+          console.log(user);
+          res.writeHead(409);
+          return res.end('Username unavailable');
+        }
+
+        Users.create({ username, password, email })
+          .then((doc) => {
+            doc
+              .save()
+              .then(() => {
+                res.writeHead(200);
+                res.end('User created successfully');
+              })
+              .catch((err) => {
+                res.writeHead(500);
+                res.end(err);
+              });
+          })
+          .catch((e) => {
+            useLogger(LogLevel.ERROR)(e);
+            res.writeHead(500);
+            res.end('Something went wrong!!!');
+          });
+      })
+      .catch((err) => {
+        useLogger(LogLevel.ERROR)(err);
+        res.writeHead(500);
+        res.end('Something went wrong!!!');
+      });
+  });
+  // hash password
+
+  // pass hashed data into DB
+  // return success if everything is fine
+  // return error if not fine
+}
+
+// utility function
+function handleAsync(fn) {
+  return (req, res) => {
+    return new Promise((reject, resolve) => {
+      fn(req, res, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  };
+}
 
 function authenticate(req, _) {
   return new Promise((resolve, reject) => {
@@ -49,8 +174,7 @@ function authenticate(req, _) {
       if (!user)
         return reject('User not found! Enter a valid User name or sign up.');
 
-      req.user = user;
-      resolve();
+      resolve({ user });
     });
   });
 }
@@ -82,4 +206,7 @@ module.exports = {
   authenticate,
   useLogger,
   LogLevel,
+  handleAsync,
+  login,
+  signup,
 };
