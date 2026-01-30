@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 3000;
 const HOST_NAME = 'localHost';
 
 const requestHandler = async (req, res) => {
-  useLogger(LogLevel.DEBUG)(req.url);
+  console.log(`${req.url} URL`);
 
   const { pathname } = url.parse(req.url, true);
   res.setHeader('Content-Type', 'Application/json');

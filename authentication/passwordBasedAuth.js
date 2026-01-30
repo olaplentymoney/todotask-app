@@ -60,20 +60,6 @@ function login(req, res) {
         res.writeHead(500);
         res.end('Something went wrong!!!');
       });
-
-    // Users.findOne({ username, password })
-    //   .select('-tasks -password') // remove password from projection
-    //   .then((user) => {
-    //     // return error if not found
-    //     if (!user) {
-    //       res.writeHead(404);
-    //       return res.end('User not found!!');
-    //     }
-
-    //     // return user if found
-    //     res.writeHead(200);
-    //     res.end(JSON.stringify({ user }));
-    //   })
   });
 }
 
