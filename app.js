@@ -1,6 +1,4 @@
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
 const url = require('url');
 require('dotenv').config();
 const {
@@ -22,6 +20,8 @@ const PORT = process.env.PORT || 3000;
 const HOST_NAME = 'localHost';
 
 const requestHandler = async (req, res) => {
+  useLogger(LogLevel.DEBUG)(req.url);
+
   const { pathname } = url.parse(req.url, true);
   res.setHeader('Content-Type', 'Application/json');
 
@@ -118,7 +118,7 @@ function addTodoTask(req, res) {
   });
 }
 
-//PUT METTOD
+//PUT METHOD
 function updateTodoTask(req, res) {
   const body = [];
   req.on('data', (chunk) => {
