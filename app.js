@@ -1,5 +1,6 @@
 const http = require('http');
 const url = require('url');
+
 require('dotenv').config();
 const {
   authenticate,
@@ -7,6 +8,7 @@ const {
   LogLevel,
   login,
   signup,
+  renderLoginPage,
 } = require('./authentication/passwordBasedAuth');
 const { connectToMongoDB } = require('./db.js');
 const { Tasks } = require('./DB_Model/task.js');
@@ -20,7 +22,7 @@ const PORT = process.env.PORT || 3000;
 const HOST_NAME = 'localHost';
 
 const requestHandler = async (req, res) => {
-  console.log(`[ROUTE] [${req.url}]`);
+  console.log(`[ ROUTE | METHOD ] [ ${req.url} | ${req.method} ]`);
 
   const { pathname } = url.parse(req.url, true);
   res.setHeader('Content-Type', 'Application/json');
@@ -45,6 +47,7 @@ const requestHandler = async (req, res) => {
   const routes = {
     GET: {
       '/todo': protect(getAllTodoTasks),
+      '/': renderLoginPage,
     },
     POST: {
       '/todo': protect(addTodoTask),

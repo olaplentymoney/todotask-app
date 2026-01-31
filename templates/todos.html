@@ -1,0 +1,12 @@
+<h1>Todos</h1>
+
+<ul class="todo-list">
+  {{todoItems}}
+</ul>
+
+<h2>Add New Todo</h2>
+<form method="POST" action="/todo">
+  <input name="title" placeholder="Title" required />
+  <input name="description" placeholder="Description" />
+  <button>Add Todo</button>
+</form>

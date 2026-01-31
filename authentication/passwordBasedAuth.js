@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Users } = require('../DB_Model/user');
+const { render } = require('../util');
 
 const userDBpath = path.join(__dirname, '..', 'DB_MOdel', 'user.json');
 
@@ -21,6 +22,15 @@ const getUserByUserName = (params = { username, password }) => {
       // return user if found
       return user;
     });
+};
+
+const renderLoginPage = (_, res) => {
+  const html = render('layout', {
+    title: 'Authentication | Login',
+    content: render('login', {}),
+  });
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  return res.end(html);
 };
 
 function login(req, res) {
@@ -52,6 +62,7 @@ function login(req, res) {
           res.writeHead(404);
           return res.end('Invalid username or password');
         }
+
         res.writeHead(200);
         res.end(JSON.stringify(user));
       })
@@ -195,4 +206,5 @@ module.exports = {
   handleAsync,
   login,
   signup,
+  renderLoginPage,
 };
